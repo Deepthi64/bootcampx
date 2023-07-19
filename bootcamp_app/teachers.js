@@ -11,22 +11,26 @@ pool.connect()
   .then(() => {
     console.log('Connected to the bootcampx database');
 
-    pool.query(`
-    SELECT DISTINCT teachers.name as teacher, cohorts.name as cohort
-    FROM teachers
-    JOIN assistance_requests ON teacher_id = teachers.id
-    JOIN students ON student_id = students.id
-    JOIN cohorts ON cohort_id = cohorts.id
-    WHERE cohorts.name = '${process.argv[2] || 'JUL02'}'
-    ORDER BY teacher;
-    `)
-    .then(res => {
-      res.rows.forEach(row => {
-        console.log(`${row.cohort}: ${row.teacher}`);
+    const cohortName = process.argv[2] || 'JUL02';
+    const queryString = `
+      SELECT DISTINCT teachers.name as teacher, cohorts.name as cohort
+      FROM teachers
+      JOIN assistance_requests ON teacher_id = teachers.id
+      JOIN students ON student_id = students.id
+      JOIN cohorts ON cohort_id = cohorts.id
+      WHERE cohorts.name = $1
+      ORDER BY teacher;
+    `;
+    const values = [cohortName];
+
+    pool.query(queryString, values)
+      .then(res => {
+        res.rows.forEach(row => {
+          console.log(`${row.cohort}: ${row.teacher}`);
+        });
       })
-    })
-    .catch(err => console.error('query error', err));
+      .catch(err => console.error('query error', err.stack));
   })
-  .catch((err) => {
+  .catch(err => {
     console.error('Error connecting to the database:', err);
   });
